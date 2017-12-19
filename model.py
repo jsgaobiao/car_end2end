@@ -43,12 +43,13 @@ def generate_data(data, batch_size):
 # Read original data
 lines_twolaps = read_log('/home/gaobiao/Documents/DeepLearning/zhihu_material/car_end2end/data/driving_log.csv')
 lines_curves = read_log('/home/gaobiao/Documents/DeepLearning/zhihu_material/car_end2end/data_curve/driving_log.csv')
-lines = np.array(lines_twolaps + lines_curves)
-lines = np.array(lines_twolaps)
+lines_val = read_log('/home/gaobiao/Documents/DeepLearning/zhihu_material/car_end2end/data_val/driving_log.csv')
+lines = np.array(lines_twolaps + lines_curves + lines_val)
+# lines = np.array(lines_twolaps)
 
 # Balance data
 nbins = 2000
-max_examples = 2000
+max_examples = 1000
 balanced = np.empty([0, lines.shape[1]], dtype=lines.dtype)
 for i in range(0, nbins):
     begin = i * (1.0 / nbins)
@@ -61,6 +62,9 @@ for i in range(0, nbins):
 np.random.shuffle(balanced)
 trainData = balanced[0:int(balanced.shape[0] * 0.8), :]
 valData = balanced[int(balanced.shape[0] * 0.8) + 1:, :]
+valData = np.concatenate((valData, np.array(lines_val)), axis=0)
+np.random.shuffle(valData)
+
 print("TrainData : ", trainData.shape[0], " images.")
 print("ValData : ", valData.shape[0], " images.")
 
@@ -89,7 +93,7 @@ best_model = ModelCheckpoint('/home/gaobiao/Documents/DeepLearning/zhihu_materia
 # model.fit(X_train, y_train, validation_split=0.2, shuffle=True, epochs=30, callbacks=[best_model])
 model.fit_generator(generate_data(trainData, batch_size=64),
                     steps_per_epoch=math.ceil(trainData.shape[0] / 64),
-                    epochs=60,
+                    epochs=200,
                     validation_data=generate_data(valData, batch_size=64),
                     validation_steps=math.ceil(valData.shape[0] / 64),
                     callbacks=[best_model])
